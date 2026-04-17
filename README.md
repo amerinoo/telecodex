@@ -1,47 +1,47 @@
 # TeleCodex
 
-Bot de Telegram que recibe mensajes de un chat, los envía a Codex y devuelve la respuesta al usuario.
+Telegram bot that receives chat messages, sends them to Codex, and returns the response to the user.
 
-El proyecto está pensado para ejecutarse localmente o en un servidor propio. Usa long polling contra la API de Telegram y mantiene una conversación de Codex por cada chat.
+The project is designed to run locally or on your own server. It uses long polling with the Telegram API and keeps one Codex conversation per Telegram chat.
 
-## Que incluye
+## What is included
 
-- Bot de Telegram por polling (`getUpdates`)
-- Envío de mensajes y estado `typing`
-- Integración con `@openai/codex-sdk`
-- Memoria de conversación por `chatId`
-- Comandos básicos:
-  - `/whoami`: muestra el `chatId` y nombre del usuario
-  - `/reset`: reinicia la conversación del chat
-- Lista opcional de chats autorizados
-- Modo mock para probar sin llamar a Codex
-- Configuración por variables de entorno
-- TypeScript con ESM
+- Telegram bot using polling (`getUpdates`)
+- Message sending and `typing` chat action
+- `@openai/codex-sdk` integration
+- Conversation memory per `chatId`
+- Basic commands:
+  - `/whoami`: returns the `chatId` and user name
+  - `/reset`: resets the chat conversation
+- Optional allowlist for authorized chats
+- Mock mode for testing without calling Codex
+- Environment-based configuration
+- TypeScript with ESM
 
-## Requisitos
+## Requirements
 
-- Node.js 18 o superior
+- Node.js 18 or newer
 - npm
-- Un bot de Telegram creado con BotFather
-- Codex instalado y autenticado en la máquina donde se ejecuta el bot
+- A Telegram bot created with BotFather
+- Codex installed and authenticated on the machine running the bot
 
-## Instalación
+## Installation
 
 ```bash
 npm install
 ```
 
-Crea el archivo de entorno:
+Create the environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Edita `.env` con tus valores.
+Edit `.env` with your values.
 
-## Configuración
+## Configuration
 
-Variables soportadas:
+Supported variables:
 
 ```env
 TELEGRAM_BOT_TOKEN=
@@ -57,121 +57,121 @@ MOCK_CODEX_RESPONSE=false
 
 `TELEGRAM_BOT_TOKEN`
 
-Token del bot de Telegram. Es obligatorio.
+Telegram bot token. Required.
 
 `CODEX_WORKING_DIRECTORY`
 
-Directorio donde Codex ejecuta las tareas. Si queda vacío, usa el directorio actual.
+Directory where Codex runs tasks. If empty, the current working directory is used.
 
 `POLLING_TIMEOUT_SECONDS`
 
-Timeout del long polling de Telegram. Por defecto: `30`.
+Telegram long polling timeout. Default: `30`.
 
 `ALLOWED_CHAT_IDS`
 
-Lista opcional de chats permitidos, separada por comas.
+Optional comma-separated list of allowed chats.
 
-Ejemplo:
+Example:
 
 ```env
 ALLOWED_CHAT_IDS=123456789,987654321
 ```
 
-Si no se define, cualquier chat que escriba al bot puede usarlo.
+If not set, any chat that messages the bot can use it.
 
 `SKIP_STARTUP_MESSAGE`
 
-Si vale `true`, el bot no envía mensaje de inicio a los chats permitidos.
+If set to `true`, the bot does not send a startup message to allowed chats.
 
 `USE_COORDINATOR`
 
-Si vale `true`, el prompt enviado a Codex pide usar el coordinator skill para resolver la petición end to end.
+If set to `true`, prompts sent to Codex ask it to use the coordinator skill to handle the request end to end.
 
 `MOCK_CODEX_RESPONSE`
 
-Si vale `true`, el bot devuelve una respuesta simulada. Sirve para probar Telegram sin consumir Codex.
+If set to `true`, the bot returns a fake Codex response. Useful for testing Telegram integration without calling Codex.
 
-## Uso
+## Usage
 
-Ejecutar en desarrollo:
+Run in development:
 
 ```bash
 npm run dev
 ```
 
-Compilar:
+Build:
 
 ```bash
 npm run build
 ```
 
-Ejecutar la versión compilada:
+Run the compiled version:
 
 ```bash
 npm start
 ```
 
-## Flujo
+## Flow
 
-1. Telegram entrega mensajes al bot mediante `getUpdates`.
-2. El bot ignora mensajes sin texto.
-3. Si el mensaje es `/whoami` o `/reset`, ejecuta el comando.
-4. Si `ALLOWED_CHAT_IDS` está configurado, valida que el chat esté permitido.
-5. Envía una confirmación al chat.
-6. Recupera el thread de Codex asociado al `chatId`, si existe.
-7. Envía el texto a Codex.
-8. Guarda el nuevo `threadId`.
-9. Devuelve la respuesta de Codex al usuario.
+1. Telegram delivers messages through `getUpdates`.
+2. The bot ignores messages without text.
+3. If the message is `/whoami` or `/reset`, the command is handled directly.
+4. If `ALLOWED_CHAT_IDS` is configured, the bot checks that the chat is allowed.
+5. The bot sends an acknowledgement message.
+6. It loads the Codex thread associated with the `chatId`, if one exists.
+7. It sends the user text to Codex.
+8. It stores the resulting `threadId`.
+9. It sends the Codex response back to the user.
 
-## Memoria de conversación
+## Conversation memory
 
-La relación entre chats de Telegram y threads de Codex se guarda en:
+The mapping between Telegram chats and Codex threads is stored in:
 
 ```text
 thread-store.json
 ```
 
-Ese archivo es local y no se versiona. Si se borra, los chats empiezan conversaciones nuevas.
+This file is local and is not committed. If it is deleted, chats start new conversations.
 
-## Estructura
+## Structure
 
 ```text
 src/
-├── index.ts      # Loop principal del bot
-├── telegram.ts   # Cliente HTTP para Telegram
-├── codex.ts      # Integración con Codex SDK
-├── store.ts      # Persistencia chatId -> threadId
-├── config.ts     # Variables de entorno
-├── logger.ts     # Logs simples
-└── types.ts      # Tipos de Telegram
+├── index.ts      # Main bot loop
+├── telegram.ts   # HTTP client for Telegram
+├── codex.ts      # Codex SDK integration
+├── store.ts      # chatId -> threadId persistence
+├── config.ts     # Environment variables
+├── logger.ts     # Simple logs
+└── types.ts      # Telegram types
 ```
 
-Archivos principales del repo:
+Main repository files:
 
 ```text
-.env.example      # Plantilla de configuración
-.gitignore        # Archivos ignorados por Git
-package.json      # Scripts y dependencias
-tsconfig.json     # Configuración TypeScript
-README.md         # Documentación
+.env.example      # Configuration template
+.gitignore        # Files ignored by Git
+package.json      # Scripts and dependencies
+tsconfig.json     # TypeScript configuration
+README.md         # Documentation
 ```
 
-## Archivos no versionados
+## Untracked files
 
-Estos archivos quedan fuera de Git:
+These files are intentionally excluded from Git:
 
 - `.env`
 - `node_modules/`
 - `dist/`
 - `thread-store.json`
 
-## Notas
+## Notes
 
-- El bot usa polling, no webhooks.
-- La persistencia actual es un JSON local.
-- No hay rate limiting ni cola de tareas.
-- Codex se ejecuta con `skipGitRepoCheck: true`.
+- The bot uses polling, not webhooks.
+- Current persistence is a local JSON file.
+- There is no rate limiting or task queue.
+- Codex runs with `skipGitRepoCheck: true`.
 
-## Licencia
+## License
 
-Proyecto privado / experimental.
+Private / experimental project.
