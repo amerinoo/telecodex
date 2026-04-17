@@ -1,187 +1,177 @@
 # TeleCodex
 
-Telegram bot that sends user messages to Codex and returns the response.
+Bot de Telegram que recibe mensajes de un chat, los envía a Codex y devuelve la respuesta al usuario.
 
-This project started as a minimal Codex SDK test and has been extended to support a full Telegram → Codex → response loop.
+El proyecto está pensado para ejecutarse localmente o en un servidor propio. Usa long polling contra la API de Telegram y mantiene una conversación de Codex por cada chat.
 
----
+## Que incluye
 
-## Tech Stack
+- Bot de Telegram por polling (`getUpdates`)
+- Envío de mensajes y estado `typing`
+- Integración con `@openai/codex-sdk`
+- Memoria de conversación por `chatId`
+- Comandos básicos:
+  - `/whoami`: muestra el `chatId` y nombre del usuario
+  - `/reset`: reinicia la conversación del chat
+- Lista opcional de chats autorizados
+- Modo mock para probar sin llamar a Codex
+- Configuración por variables de entorno
+- TypeScript con ESM
 
-- Node.js (>= 18)
-- TypeScript
-- @openai/codex-sdk
-- Telegram Bot API (HTTP)
-- tsx (development)
+## Requisitos
 
----
+- Node.js 18 o superior
+- npm
+- Un bot de Telegram creado con BotFather
+- Codex instalado y autenticado en la máquina donde se ejecuta el bot
 
-## Requirements
-
-- Node.js 18+
-- Codex installed and authenticated locally
-- Telegram bot token (from BotFather)
-
----
-
-## Setup
-
-### 1. Install dependencies
+## Instalación
 
 ```bash
 npm install
 ```
 
----
-
-### 2. Configure environment variables
-
-Create a `.env` file:
+Crea el archivo de entorno:
 
 ```bash
 cp .env.example .env
 ```
 
-Fill it with your values:
+Edita `.env` con tus valores.
+
+## Configuración
+
+Variables soportadas:
 
 ```env
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-CODEX_WORKING_DIRECTORY=.
+TELEGRAM_BOT_TOKEN=
+CODEX_WORKING_DIRECTORY=
 POLLING_TIMEOUT_SECONDS=30
+ALLOWED_CHAT_IDS=
+SKIP_STARTUP_MESSAGE=true
+USE_COORDINATOR=true
+MOCK_CODEX_RESPONSE=false
 ```
 
----
+### Variables
 
-## Run (development)
+`TELEGRAM_BOT_TOKEN`
+
+Token del bot de Telegram. Es obligatorio.
+
+`CODEX_WORKING_DIRECTORY`
+
+Directorio donde Codex ejecuta las tareas. Si queda vacío, usa el directorio actual.
+
+`POLLING_TIMEOUT_SECONDS`
+
+Timeout del long polling de Telegram. Por defecto: `30`.
+
+`ALLOWED_CHAT_IDS`
+
+Lista opcional de chats permitidos, separada por comas.
+
+Ejemplo:
+
+```env
+ALLOWED_CHAT_IDS=123456789,987654321
+```
+
+Si no se define, cualquier chat que escriba al bot puede usarlo.
+
+`SKIP_STARTUP_MESSAGE`
+
+Si vale `true`, el bot no envía mensaje de inicio a los chats permitidos.
+
+`USE_COORDINATOR`
+
+Si vale `true`, el prompt enviado a Codex pide usar el coordinator skill para resolver la petición end to end.
+
+`MOCK_CODEX_RESPONSE`
+
+Si vale `true`, el bot devuelve una respuesta simulada. Sirve para probar Telegram sin consumir Codex.
+
+## Uso
+
+Ejecutar en desarrollo:
 
 ```bash
 npm run dev
 ```
 
-The bot will start polling Telegram and processing incoming messages.
+Compilar:
 
----
+```bash
+npm run build
+```
 
-## How it works
+Ejecutar la versión compilada:
 
-### Flow
+```bash
+npm start
+```
 
-User → Telegram → TeleCodex → Codex → Response → Telegram
+## Flujo
 
-### Steps
+1. Telegram entrega mensajes al bot mediante `getUpdates`.
+2. El bot ignora mensajes sin texto.
+3. Si el mensaje es `/whoami` o `/reset`, ejecuta el comando.
+4. Si `ALLOWED_CHAT_IDS` está configurado, valida que el chat esté permitido.
+5. Envía una confirmación al chat.
+6. Recupera el thread de Codex asociado al `chatId`, si existe.
+7. Envía el texto a Codex.
+8. Guarda el nuevo `threadId`.
+9. Devuelve la respuesta de Codex al usuario.
 
-1. Telegram sends messages via `getUpdates` (long polling)
-2. The bot extracts `message.text`
-3. A Codex thread is created or resumed
-4. The prompt is sent to Codex
-5. The response is returned to the user via `sendMessage`
+## Memoria de conversación
 
----
+La relación entre chats de Telegram y threads de Codex se guarda en:
 
-## Conversation memory
-
-The bot stores a mapping:
-
-chatId → threadId
-
-This allows:
-- maintaining conversation context per user
-- continuing Codex threads instead of starting new ones
-
-Storage is implemented as a local JSON file:
-
+```text
 thread-store.json
+```
 
----
+Ese archivo es local y no se versiona. Si se borra, los chats empiezan conversaciones nuevas.
 
-## Project structure
+## Estructura
 
+```text
 src/
-├── index.ts        # Main loop (Telegram polling)
-├── telegram.ts     # Telegram API client
-├── codex.ts        # Codex SDK integration
-├── store.ts        # chatId ↔ threadId persistence
-├── config.ts       # Environment config
-└── types.ts        # Telegram types
+├── index.ts      # Loop principal del bot
+├── telegram.ts   # Cliente HTTP para Telegram
+├── codex.ts      # Integración con Codex SDK
+├── store.ts      # Persistencia chatId -> threadId
+├── config.ts     # Variables de entorno
+├── logger.ts     # Logs simples
+└── types.ts      # Tipos de Telegram
+```
 
----
+Archivos principales del repo:
 
-## Important notes
+```text
+.env.example      # Plantilla de configuración
+.gitignore        # Archivos ignorados por Git
+package.json      # Scripts y dependencias
+tsconfig.json     # Configuración TypeScript
+README.md         # Documentación
+```
 
-### 1. ESM configuration
+## Archivos no versionados
 
-Project uses ESM:
+Estos archivos quedan fuera de Git:
 
-"type": "module"
+- `.env`
+- `node_modules/`
+- `dist/`
+- `thread-store.json`
 
-and TypeScript:
+## Notas
 
-"module": "NodeNext"
+- El bot usa polling, no webhooks.
+- La persistencia actual es un JSON local.
+- No hay rate limiting ni cola de tareas.
+- Codex se ejecuta con `skipGitRepoCheck: true`.
 
----
+## Licencia
 
-### 2. Codex working directory
-
-Codex requires a trusted working directory.
-
-Current setup uses:
-
-skipGitRepoCheck: true
-
-Recommended alternative:
-
-git init
-git add .
-git commit -m "init"
-
----
-
-### 3. Environment variables
-
-Secrets are not committed:
-
-- `.env` is ignored
-- `.env.example` is provided
-
----
-
-### 4. Error handling
-
-The bot runs in an infinite loop:
-- logs errors
-- retries automatically
-- avoids crashing on transient failures
-
----
-
-## Known limitations
-
-- Local JSON storage (not persistent across environments)
-- No rate limiting or queueing
-- No command handling (/start, /help, etc.)
-- No message formatting (Markdown, HTML)
-
----
-
-## Next steps
-
-- [ ] Add command system (/start, /reset)
-- [ ] Add proper logging
-- [ ] Move storage to database (SQLite / Redis)
-- [ ] Add rate limiting
-- [ ] Deploy (Docker / VPS)
-- [ ] Switch to webhook instead of polling
-
----
-
-## Goal
-
-Provide a minimal but extensible foundation for building:
-
-AI-powered Telegram bots using Codex
-
----
-
-## License
-
-Private / experimental project
+Proyecto privado / experimental.
