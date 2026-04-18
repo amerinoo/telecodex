@@ -21,7 +21,7 @@ export async function askCodex(
 
   if (config.mockCodexResponse) {
     log("CODEX", "Mock response enabled");
-    await new Promise((r) => setTimeout(r, 1500)); // simula 1.5s de procesamiento
+    await new Promise((r) => setTimeout(r, 1500));
 
     return {
       response: `🤖 Mock response for: "${input}"`,
@@ -38,17 +38,13 @@ export async function askCodex(
     ? codex.resumeThread(threadId, threadOptions)
     : codex.startThread(threadOptions);
 
-  const prompt = config.useCoordinator
-    ? `Use the coordinator skill to handle this request end to end: ${input}`
-    : input;
-
   log("BOT", "Calling Codex", {
     hasThread: Boolean(threadId),
   });
 
   log("CODEX", "Running prompt");
 
-  const turn = await thread.run(prompt);
+  const turn = await thread.run(input);
 
   log("BOT", "Codex response received");
 

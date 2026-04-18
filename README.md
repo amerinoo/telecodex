@@ -15,6 +15,7 @@ The project is designed to run locally or on your own server. It uses long polli
   - `/reset`: resets the chat conversation
 - Optional allowlist for authorized chats
 - Mock mode for testing without calling Codex
+- Direct user input forwarding to Codex
 - Environment-based configuration
 - TypeScript with ESM
 
@@ -49,7 +50,6 @@ CODEX_WORKING_DIRECTORY=
 POLLING_TIMEOUT_SECONDS=30
 ALLOWED_CHAT_IDS=
 SKIP_STARTUP_MESSAGE=true
-USE_COORDINATOR=true
 MOCK_CODEX_RESPONSE=false
 ```
 
@@ -83,10 +83,6 @@ If not set, any chat that messages the bot can use it.
 
 If set to `true`, the bot does not send a startup message to allowed chats.
 
-`USE_COORDINATOR`
-
-If set to `true`, prompts sent to Codex ask it to use the coordinator skill to handle the request end to end.
-
 `MOCK_CODEX_RESPONSE`
 
 If set to `true`, the bot returns a fake Codex response. Useful for testing Telegram integration without calling Codex.
@@ -119,7 +115,7 @@ npm start
 4. If `ALLOWED_CHAT_IDS` is configured, the bot checks that the chat is allowed.
 5. The bot sends an acknowledgement message.
 6. It loads the Codex thread associated with the `chatId`, if one exists.
-7. It sends the user text to Codex.
+7. It sends the user text directly to Codex.
 8. It stores the resulting `threadId`.
 9. It sends the Codex response back to the user.
 
@@ -170,6 +166,7 @@ These files are intentionally excluded from Git:
 - The bot uses polling, not webhooks.
 - Current persistence is a local JSON file.
 - There is no rate limiting or task queue.
+- User messages are passed directly to Codex without coordinator wrapping.
 - Codex runs with `skipGitRepoCheck: true`.
 
 ## License

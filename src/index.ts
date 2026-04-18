@@ -54,12 +54,7 @@ async function handleTextMessage(chatId: number, text: string): Promise<void> {
 async function main(): Promise<void> {
   let offset: number | undefined;
 
-  log(
-    "BOT",
-    `🤖 TeleCodex bot started | coordinator: ${
-      config.useCoordinator ? "ON" : "OFF"
-    }`,
-  );
+  log("BOT", "🤖 TeleCodex bot started");
 
   const isColdStart = !config.skipStartupMessage;
 

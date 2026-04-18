@@ -31,6 +31,5 @@ export const config = {
         .filter((id) => !Number.isNaN(id))
     : undefined,
   skipStartupMessage: process.env.SKIP_STARTUP_MESSAGE === "true",
-  useCoordinator: process.env.USE_COORDINATOR === "true",
   mockCodexResponse: process.env.MOCK_CODEX_RESPONSE === "true",
 };
