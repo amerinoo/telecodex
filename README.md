@@ -15,7 +15,8 @@ The project is designed to run locally or on your own server. It uses long polli
   - `/reset`: resets the chat conversation
 - Optional allowlist for authorized chats
 - Mock mode for testing without calling Codex
-- Direct user input forwarding to Codex
+- Coordinator support for the first message in a conversation
+- Direct user input forwarding after the conversation has started
 - Environment-based configuration
 - TypeScript with ESM
 
@@ -50,6 +51,7 @@ CODEX_WORKING_DIRECTORY=
 POLLING_TIMEOUT_SECONDS=30
 ALLOWED_CHAT_IDS=
 SKIP_STARTUP_MESSAGE=true
+USE_COORDINATOR=true
 MOCK_CODEX_RESPONSE=false
 ```
 
@@ -83,6 +85,10 @@ If not set, any chat that messages the bot can use it.
 
 If set to `true`, the bot does not send a startup message to allowed chats.
 
+`USE_COORDINATOR`
+
+If set to `true`, the first prompt in a new chat conversation asks Codex to use the coordinator skill. Follow-up messages in the same conversation are sent directly to Codex.
+
 `MOCK_CODEX_RESPONSE`
 
 If set to `true`, the bot returns a fake Codex response. Useful for testing Telegram integration without calling Codex.
@@ -115,9 +121,10 @@ npm start
 4. If `ALLOWED_CHAT_IDS` is configured, the bot checks that the chat is allowed.
 5. The bot sends an acknowledgement message.
 6. It loads the Codex thread associated with the `chatId`, if one exists.
-7. It sends the user text directly to Codex.
-8. It stores the resulting `threadId`.
-9. It sends the Codex response back to the user.
+7. If this is a new Codex thread and `USE_COORDINATOR` is enabled, it asks Codex to use the coordinator skill.
+8. If this is an existing Codex thread, it sends the user text directly to Codex.
+9. It stores the resulting `threadId`.
+10. It sends the Codex response back to the user.
 
 ## Conversation memory
 
@@ -166,7 +173,8 @@ These files are intentionally excluded from Git:
 - The bot uses polling, not webhooks.
 - Current persistence is a local JSON file.
 - There is no rate limiting or task queue.
-- User messages are passed directly to Codex without coordinator wrapping.
+- Coordinator wrapping is only applied to the first message in a new Codex thread.
+- Follow-up user messages are passed directly to Codex.
 - Codex runs with `skipGitRepoCheck: true`.
 
 ## License

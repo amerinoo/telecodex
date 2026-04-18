@@ -38,13 +38,19 @@ export async function askCodex(
     ? codex.resumeThread(threadId, threadOptions)
     : codex.startThread(threadOptions);
 
+  const shouldUseCoordinator = config.useCoordinator && !threadId;
+  const prompt = shouldUseCoordinator
+    ? `Use the coordinator skill to handle this request end to end: ${input}`
+    : input;
+
   log("BOT", "Calling Codex", {
     hasThread: Boolean(threadId),
+    coordinator: shouldUseCoordinator,
   });
 
   log("CODEX", "Running prompt");
 
-  const turn = await thread.run(input);
+  const turn = await thread.run(prompt);
 
   log("BOT", "Codex response received");
 
